@@ -220,12 +220,12 @@ public class SimpleBot extends TelegramLongPollingBot {
 
     @Override
     public String getBotUsername() {
-        return "@mdvzhnk_bot";
+        return "";
     }
 
     @Override
     public String getBotToken() {
-        return "5328607653:AAGuiGg0ivMrdzVrpk9AMM7LpTaHRxkX_70";
+        return "";
     }
 
     @SneakyThrows
