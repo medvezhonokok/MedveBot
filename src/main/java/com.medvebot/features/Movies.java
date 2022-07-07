@@ -41,6 +41,11 @@ public class Movies {
         string = string.toLowerCase(Locale.ROOT);
         String ans = "";
 
+        string = string.contains("ужасы") ? "ужасы" : string;
+        string = string.contains("комедии") ? "комедии" : string;
+        string = string.contains("драмы") ? "драмы" : string;
+        string = string.contains("детективы") ? "детективы" : string;
+
         switch (string) {
             case "ужасы":
                 ans = FOR(ans, horrors);
