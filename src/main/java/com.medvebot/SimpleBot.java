@@ -18,7 +18,10 @@ import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
 import java.io.*;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Locale;
+import java.util.Objects;
 
 public class SimpleBot extends TelegramLongPollingBot {
     private static int predCount = 0;
@@ -57,7 +60,7 @@ public class SimpleBot extends TelegramLongPollingBot {
         }
     }
 
-    private void doMovies(Message message) throws TelegramApiException {
+    private void doMovies(final Message message) throws TelegramApiException {
         String type = message.getText().toLowerCase(Locale.ROOT);
         type = type.replace(" ", "");
 
@@ -72,7 +75,7 @@ public class SimpleBot extends TelegramLongPollingBot {
         clear();
     }
 
-    private void doMd2Html(Message message) throws IOException, TelegramApiException {
+    private void doMd2Html(final Message message) throws IOException, TelegramApiException {
         BufferedWriter in = new BufferedWriter(new FileWriter("in.txt"));
 
         in.write(message.getText());
@@ -87,10 +90,10 @@ public class SimpleBot extends TelegramLongPollingBot {
         clear();
     }
 
-    private void doCount(Message message) throws IOException, TelegramApiException {
+    private void doCount(final Message message) throws IOException, TelegramApiException {
         BufferedWriter writer = new BufferedWriter(new FileWriter("in.txt"));
 
-        String sentence = message.getText();
+        var sentence = message.getText();
         sentence = sentence.replace("!", "");
         sentence = sentence.replace("?", "");
 
@@ -107,7 +110,7 @@ public class SimpleBot extends TelegramLongPollingBot {
         clear();
     }
 
-    private void doParse(Message message) throws TelegramApiException {
+    private void doParse(final Message message) throws TelegramApiException {
         Parser parser = new Parser(message.getText() + " ");
         parser.parse();
 
@@ -122,7 +125,7 @@ public class SimpleBot extends TelegramLongPollingBot {
         clear();
     }
 
-    private void checkOnCommands(Message message) {
+    private void checkOnCommands(final Message message) {
         checkMovies(message);
         checkMd2Html(message);
         checkInfo(message);
@@ -131,7 +134,7 @@ public class SimpleBot extends TelegramLongPollingBot {
     }
 
     @SneakyThrows
-    private void checkWordStat(Message message) {
+    private void checkWordStat(final Message message) {
         if (Objects.equals(message.getText(), "/count_words")) {
             toWordStat = true;
             predCount++;
@@ -146,7 +149,7 @@ public class SimpleBot extends TelegramLongPollingBot {
     }
 
     @SneakyThrows
-    private void checkMovies(Message message) {
+    private void checkMovies(final Message message) {
         if (Objects.equals(message.getText(), "/movies")) {
             toMovies = true;
             predCount++;
@@ -160,7 +163,7 @@ public class SimpleBot extends TelegramLongPollingBot {
         }
     }
 
-    private void printMessage(Message message, String c) throws TelegramApiException {
+    private void printMessage(final Message message, final String c) throws TelegramApiException {
         execute(
                 SendMessage.builder()
                         .chatId(message.getChatId().toString())
@@ -169,7 +172,7 @@ public class SimpleBot extends TelegramLongPollingBot {
     }
 
     @SneakyThrows
-    private void checkMd2Html(Message message) {
+    private void checkMd2Html(final Message message) {
         if (Objects.equals(message.getText(), "/md2html")) {
             toMd2Html = true;
             predCount++;
@@ -178,7 +181,7 @@ public class SimpleBot extends TelegramLongPollingBot {
     }
 
     @SneakyThrows
-    private void checkInfo(Message message) {
+    private void checkInfo(final Message message) {
         if (Objects.equals(message.getText(), "/info") || Objects.equals(message.getText(), "/start")) {
             clear();
 
@@ -195,7 +198,7 @@ public class SimpleBot extends TelegramLongPollingBot {
     }
 
     @SneakyThrows
-    private void checkEvaluate(Message message) {
+    private void checkEvaluate(final Message message) {
         if (Objects.equals(message.getText(), "/evaluate")) {
             toParse = true;
             predCount++;
@@ -205,12 +208,12 @@ public class SimpleBot extends TelegramLongPollingBot {
 
     @Override
     public String getBotUsername() {
-        return "";
+        return "@mdvzhnk_bot";
     }
 
     @Override
     public String getBotToken() {
-        return "";
+        return "5328607653:AAGuiGg0ivMrdzVrpk9AMM7LpTaHRxkX_70";
     }
 
     @SneakyThrows
