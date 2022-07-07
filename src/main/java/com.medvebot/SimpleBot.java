@@ -20,11 +20,13 @@ import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Locale;
 import java.util.Objects;
 
+import static java.util.Locale.*;
+
 public class SimpleBot extends TelegramLongPollingBot {
-    private static int predCount = 0;
+    private static int messagesCounts = 0;
+    private String ans = "";
 
     private static boolean toWordStat = false;
     private static boolean toMovies = false;
@@ -38,91 +40,26 @@ public class SimpleBot extends TelegramLongPollingBot {
             Message message = update.getMessage();
             checkOnCommands(message);
 
-            if (toParse && predCount > 1) {
+            if (toParse && messagesCounts > 1) {
                 doParse(message);
             }
 
-            if (toWordStat && predCount > 1) {
+            if (toWordStat && messagesCounts > 1) {
                 doCount(message);
             }
 
-            if (toMd2Html && predCount > 1) {
+            if (toMd2Html && messagesCounts > 1) {
                 doMd2Html(message);
             }
 
-            if (toMovies && predCount > 1) {
+            if (toMovies && messagesCounts > 1) {
                 doMovies(message);
             }
 
             if (toWordStat || toMd2Html || toParse || toMovies) {
-                predCount++;
+                messagesCounts++;
             }
         }
-    }
-
-    private void doMovies(final Message message) throws TelegramApiException {
-        String type = message.getText().toLowerCase(Locale.ROOT);
-        type = type.replace(" ", "");
-
-        String ans = new Movies().suggestMovies(type);
-
-        if (ans == null) {
-            printMessage(message, "Вы ввели неправильно, попробуйте еще раз.");
-            return;
-        }
-
-        printMessage(message, ans);
-        clear();
-    }
-
-    private void doMd2Html(final Message message) throws IOException, TelegramApiException {
-        BufferedWriter in = new BufferedWriter(new FileWriter("in.txt"));
-
-        in.write(message.getText());
-        in.close();
-
-        final var fileReader = new FileReader("in.txt", StandardCharsets.UTF_8);
-        final var bufferedReader = new BufferedReader(fileReader);
-
-        String html = new MDParser().parse(new ParagraphSource(bufferedReader.lines().iterator()));
-
-        printMessage(message, html);
-        clear();
-    }
-
-    private void doCount(final Message message) throws IOException, TelegramApiException {
-        BufferedWriter writer = new BufferedWriter(new FileWriter("in.txt"));
-
-        var sentence = message.getText();
-        sentence = sentence.replace("!", "");
-        sentence = sentence.replace("?", "");
-
-        writer.write(sentence);
-        writer.close();
-
-        Scanner2021 in = new Scanner2021("in.txt", "utf8");
-
-        ArrayList<String> words = new ArrayList<>();
-        String ans = WordStatInput.solve(words, in, "");
-
-        in.close();
-        printMessage(message, ans);
-        clear();
-    }
-
-    private void doParse(final Message message) throws TelegramApiException {
-        Parser parser = new Parser(message.getText() + " ");
-        parser.parse();
-
-        StringBuilder ans = new StringBuilder();
-
-        for (BigInteger integer : Parser.stack) {
-            ans.append(integer).append(" ");
-        }
-
-        Parser.stack.clear();
-        printMessage(message, String.valueOf(ans));
-        clear();
     }
 
     private void checkOnCommands(final Message message) {
@@ -133,33 +70,120 @@ public class SimpleBot extends TelegramLongPollingBot {
         checkWordStat(message);
     }
 
+    private void doMovies(final Message message) throws TelegramApiException {
+        ans = new Movies().suggestMovies(message.getText().
+                toLowerCase(ROOT).
+                replace(" ", ""));
+
+        if (ans == null) {
+            printMessage(message, "Вы ввели неправильно, попробуйте еще раз.");
+            return;
+        }
+
+        func(message);
+    }
+
+    private void doMd2Html(final Message message) throws IOException, TelegramApiException {
+        final var in = new BufferedWriter(new FileWriter("in.txt"));
+
+        in.write(message.getText());
+        in.close();
+
+        final var fileReader = new FileReader("in.txt", StandardCharsets.UTF_8);
+        final var bufferedReader = new BufferedReader(fileReader);
+
+        ans = new MDParser().parse(
+                new ParagraphSource(
+                        bufferedReader.lines().iterator()));
+
+        func(message);
+    }
+
+    private void doCount(final Message message) throws IOException, TelegramApiException {
+        final var writer = new BufferedWriter(new FileWriter("in.txt"));
+
+        var sentence = message.getText().
+                replace("!", "").
+                replace("?", "");
+
+        writer.write(sentence);
+        writer.close();
+
+        final var in = new Scanner2021("in.txt", "utf8");
+
+        ans = WordStatInput.solve(new ArrayList<>(), in, "");
+
+        in.close();
+        func(message);
+    }
+
+    private void doParse(final Message message) throws TelegramApiException {
+        Parser parser = new Parser(message.getText() + " ");
+
+        for (BigInteger integer : parser.stack) {
+            ans += integer + " ";
+        }
+
+        parser.stack.clear();
+        func(message);
+    }
+
     @SneakyThrows
     private void checkWordStat(final Message message) {
         if (Objects.equals(message.getText(), "/count_words")) {
             toWordStat = true;
-            predCount++;
-
-            printMessage(message, "Введите сообщение, в котором хотите посчитать кол-во слов.");
+            solve(message, "Введите сообщение, в котором хотите посчитать кол-во слов.");
         }
-    }
-
-    private void clear() {
-        predCount = 0;
-        toParse = toWordStat = toMovies = toMd2Html = false;
     }
 
     @SneakyThrows
     private void checkMovies(final Message message) {
         if (Objects.equals(message.getText(), "/movies")) {
             toMovies = true;
-            predCount++;
+            messagesCounts++;
 
             StringBuilder c = new StringBuilder("Введите одним сообщением жанр, который вы хотите посмотреть: ");
-            for (String s : Arrays.asList("\n -Ужасы", "\n -Комедии", "\n -Детективы", "\n -Драмы")) {
+            for (String s : Arrays.asList("\n -Ужасы",
+                    "\n -Комедии",
+                    "\n -Детективы",
+                    "\n -Драмы")) {
                 c.append(s);
             }
 
             printMessage(message, c.toString());
+        }
+    }
+
+    @SneakyThrows
+    private void checkMd2Html(final Message message) {
+        if (Objects.equals(message.getText(), "/md2html")) {
+            toMd2Html = true;
+            solve(message, "Введите одним сообщением(MD) то, что хотите перевести в HTML");
+        }
+    }
+
+    @SneakyThrows
+    private void checkInfo(final Message message) {
+        if (Objects.equals(message.getText(), "/info") || Objects.equals(message.getText(), "/start")) {
+            clear();
+
+            StringBuilder info = new StringBuilder("Was created by: \n   @medvezhonokok\n");
+            for (String s : Arrays.asList("\n",
+                    "Данный бот умеет: \n",
+                    " Из развлекательного:\n",
+                    "\t-советовать фильмы по жанрам\n",
+                    "\t-советовать литературу на вечер\n")) {
+                info.append(s);
+            }
+            for (String s : Arrays.asList("\n",
+                    " Из более интеллектуального:\n",
+                    "\t-считать выражения в ОПЗ\n",
+                    "\t-считать кол-во слов в сообщении\n",
+                    "\t-конвертировать файлы markdown to html\n")) {
+                info.append(s);
+            }
+
+            printMessage(message, info.toString());
         }
     }
 
@@ -171,49 +195,37 @@ public class SimpleBot extends TelegramLongPollingBot {
                         .build());
     }
 
-    @SneakyThrows
-    private void checkMd2Html(final Message message) {
-        if (Objects.equals(message.getText(), "/md2html")) {
-            toMd2Html = true;
-            predCount++;
-            printMessage(message, "Введите одним сообщением(MD) то, что хотите перевести в HTML");
-        }
+    private void func(final Message message) throws TelegramApiException {
+        printMessage(message, ans);
+        clear();
     }
 
-    @SneakyThrows
-    private void checkInfo(final Message message) {
-        if (Objects.equals(message.getText(), "/info") || Objects.equals(message.getText(), "/start")) {
-            clear();
+    private void solve(Message message, String c) throws TelegramApiException {
+        messagesCounts++;
+        printMessage(message, c);
+    }
 
-            StringBuilder info = new StringBuilder("Was created by: \n   @medvezhonokok\n");
-            for (String s : Arrays.asList("\n", "Данный бот умеет: \n", " Из развлекательного:\n", "\t-советовать фильмы по жанрам\n", "\t-советовать литературу на вечер\n")) {
-                info.append(s);
-            }
-            for (String s : Arrays.asList("\n", " Из более интеллектуального:\n", "\t-считать выражения в ОПЗ\n", "\t-считать кол-во слов в сообщении\n", "\t-конвертировать файлы markdown to html\n")) {
-                info.append(s);
-            }
-
-            printMessage(message, info.toString());
-        }
+    private void clear() {
+        messagesCounts = 0;
+        toParse = toWordStat = toMovies = toMd2Html = false;
     }
 
     @SneakyThrows
     private void checkEvaluate(final Message message) {
         if (Objects.equals(message.getText(), "/evaluate")) {
             toParse = true;
-            predCount++;
-            printMessage(message, "Введите выражение в ОПЗ");
+            solve(message, "Введите выражение в ОПЗ");
         }
     }
 
     @Override
     public String getBotUsername() {
-        return "";
+        return "@mdvzhnk_bot";
     }
 
     @Override
     public String getBotToken() {
-        return "";
+        return "5328607653:AAGuiGg0ivMrdzVrpk9AMM7LpTaHRxkX_70";
     }
 
     @SneakyThrows
