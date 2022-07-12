@@ -12,19 +12,19 @@ import org.telegram.telegrambots.meta.TelegramBotsApi;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
-import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
 
-import java.io.*;
-import java.math.BigInteger;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Objects;
 
-import static java.util.Locale.*;
+public class MedveBot extends TelegramLongPollingBot {
 
-public class SimpleBot extends TelegramLongPollingBot {
     private static int messagesCounts = 0;
     private String ans = "";
 
@@ -70,9 +70,9 @@ public class SimpleBot extends TelegramLongPollingBot {
         checkWordStat(message);
     }
 
-    private void doMovies(final Message message) throws TelegramApiException {
+    @SneakyThrows
+    private void doMovies(final Message message) {
         ans = new Movies().suggestMovies(message.getText().
-                toLowerCase(ROOT).
                 replace(" ", ""));
 
         if (ans == null) {
@@ -80,10 +80,11 @@ public class SimpleBot extends TelegramLongPollingBot {
             return;
         }
 
-        func(message);
+        finalFunc(message);
     }
 
-    private void doMd2Html(final Message message) throws IOException, TelegramApiException {
+    @SneakyThrows
+    private void doMd2Html(final Message message) {
         final var in = new BufferedWriter(new FileWriter("in.txt"));
 
         in.write(message.getText());
@@ -96,10 +97,11 @@ public class SimpleBot extends TelegramLongPollingBot {
                 new ParagraphSource(
                         bufferedReader.lines().iterator()));
 
-        func(message);
+        finalFunc(message);
     }
 
-    private void doCount(final Message message) throws IOException, TelegramApiException {
+    @SneakyThrows
+    private void doCount(final Message message) {
         final var writer = new BufferedWriter(new FileWriter("in.txt"));
 
         var sentence = message.getText().
@@ -114,25 +116,22 @@ public class SimpleBot extends TelegramLongPollingBot {
         ans = WordStatInput.solve(new ArrayList<>(), in, "");
 
         in.close();
-        func(message);
+        finalFunc(message);
     }
 
-    private void doParse(final Message message) throws TelegramApiException {
+    @SneakyThrows
+    private void doParse(final Message message) {
         Parser parser = new Parser(message.getText() + " ");
 
-        for (BigInteger integer : parser.stack) {
-            ans += integer + " ";
-        }
-
-        parser.stack.clear();
-        func(message);
+        ans = parser.parse();
+        finalFunc(message);
     }
 
     @SneakyThrows
     private void checkWordStat(final Message message) {
         if (Objects.equals(message.getText(), "/count_words")) {
             toWordStat = true;
-            solve(message, "Введите сообщение, в котором хотите посчитать кол-во слов.");
+            increase(message, "Введите сообщение, в котором хотите посчитать кол-во слов.");
         }
     }
 
@@ -143,9 +142,11 @@ public class SimpleBot extends TelegramLongPollingBot {
             messagesCounts++;
 
             StringBuilder c = new StringBuilder("Введите одним сообщением жанр, который вы хотите посмотреть: ");
-            for (String s : Arrays.asList("\n -Ужасы",
+            for (String s : Arrays.asList(
+                    "\n -Ужасы",
                     "\n -Комедии",
                     "\n -Детективы",
+                    "\n -Боевики",
                     "\n -Драмы")) {
                 c.append(s);
             }
@@ -158,28 +159,28 @@ public class SimpleBot extends TelegramLongPollingBot {
     private void checkMd2Html(final Message message) {
         if (Objects.equals(message.getText(), "/md2html")) {
             toMd2Html = true;
-            solve(message, "Введите одним сообщением(MD) то, что хотите перевести в HTML");
+            increase(message, "Введите одним сообщением(MD) то, что хотите перевести в HTML");
         }
     }
 
     @SneakyThrows
     private void checkInfo(final Message message) {
-        if (Objects.equals(message.getText(), "/info") || Objects.equals(message.getText(), "/start")) {
+        if (Objects.equals(message.getText(), "/info")
+                || Objects.equals(message.getText(), "/start")) {
             clear();
+            StringBuilder info = new StringBuilder();
 
-            StringBuilder info = new StringBuilder("Was created by: \n   @medvezhonokok\n");
-            for (String s : Arrays.asList("\n",
+            for (String s : Arrays.asList(
+                    "Was created by: \n   @medvezhonokok\n",
+                    "\n",
                     "Данный бот умеет: \n",
                     " Из развлекательного:\n",
                     "\t-советовать фильмы по жанрам\n",
-                    "\t-советовать литературу на вечер\n")) {
-                info.append(s);
-            }
-            for (String s : Arrays.asList("\n",
+                    "\n",
                     " Из более интеллектуального:\n",
                     "\t-считать выражения в ОПЗ\n",
                     "\t-считать кол-во слов в сообщении\n",
-                    "\t-конвертировать файлы markdown to html\n")) {
+                    "\t-конвертировать файлы MarkDown to HTML\n")) {
                 info.append(s);
             }
 
@@ -187,20 +188,22 @@ public class SimpleBot extends TelegramLongPollingBot {
         }
     }
 
-    private void printMessage(final Message message, final String c) throws TelegramApiException {
-        execute(
-                SendMessage.builder()
-                        .chatId(message.getChatId().toString())
-                        .text(c)
-                        .build());
+    @SneakyThrows
+    private void printMessage(final Message message, final String c) {
+        execute(SendMessage.builder()
+                .chatId(message.getChatId().toString())
+                .text(c)
+                .build());
     }
 
-    private void func(final Message message) throws TelegramApiException {
+    @SneakyThrows
+    private void finalFunc(final Message message) {
         printMessage(message, ans);
         clear();
     }
 
-    private void solve(Message message, String c) throws TelegramApiException {
+    @SneakyThrows
+    private void increase(Message message, String c) {
         messagesCounts++;
         printMessage(message, c);
     }
@@ -214,7 +217,15 @@ public class SimpleBot extends TelegramLongPollingBot {
     private void checkEvaluate(final Message message) {
         if (Objects.equals(message.getText(), "/evaluate")) {
             toParse = true;
-            solve(message, "Введите выражение в ОПЗ");
+            increase(message, "Введите выражение в Обратной Польской записи:" +
+                    "\n\nСписок операций: " +
+                    "\n\t\t\t'/' - Деление" +
+                    "\n\t\t\t'*' - Умножение" +
+                    "\n\t\t\t'+' - Сложение" +
+                    "\n\t\t\t'~' - Корень" +
+                    "\n\t\t\t'%' - Деление по модулю" +
+                    "\n\t\t\t'-' - Вычитание" +
+                    "\n\n\t \uD835\uDC0D\uD835\uDC0E\uD835\uDC13\uD835\uDC04: \n\t\tБот умеет работать с очень большими числами…");
         }
     }
 
@@ -230,7 +241,7 @@ public class SimpleBot extends TelegramLongPollingBot {
 
     @SneakyThrows
     public static void main(String[] args) {
-        SimpleBot bot = new SimpleBot();
+        MedveBot bot = new MedveBot();
         TelegramBotsApi telegramBotsApi = new TelegramBotsApi(DefaultBotSession.class);
         telegramBotsApi.registerBot(bot);
     }
