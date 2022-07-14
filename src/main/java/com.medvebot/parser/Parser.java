@@ -17,10 +17,12 @@ public class Parser {
 
     public Parser(String rpn) {
         string = rpn;
+        parse();
     }
 
     @SneakyThrows
-    public void parse() {
+    public String parse() {
+        StringBuilder sb = new StringBuilder();
         String[] s = string.split(" ");
 
         for (String value : s) {
@@ -56,8 +58,20 @@ public class Parser {
                     BigInteger second = stack.pop();
                     stack.push(second.mod(first));
                 }
+
+                if (Objects.equals(value, "~")) {
+                    BigInteger a = stack.pop();
+                    stack.push(a.sqrt());
+                }
             }
         }
+
+        for (BigInteger bi : stack) {
+            sb.append(bi).append(" ");
+        }
+
+        stack.clear();
+        return sb.toString();
     }
 
     private boolean isNumber(String que) {

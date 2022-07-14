@@ -39,26 +39,32 @@ public class MedveBot extends TelegramLongPollingBot {
         if (update.hasMessage()) {
             Message message = update.getMessage();
             checkOnCommands(message);
+            doCommand(message);
+            getUpdate();
+        }
+    }
 
-            if (toParse && messagesCounts > 1) {
-                doParse(message);
-            }
+    private void getUpdate() {
+        if (toWordStat || toMd2Html || toParse || toMovies) {
+            messagesCounts++;
+        }
+    }
 
-            if (toWordStat && messagesCounts > 1) {
-                doCount(message);
-            }
+    private void doCommand(Message message) {
+        if (toParse && messagesCounts > 1) {
+            doParse(message);
+        }
 
-            if (toMd2Html && messagesCounts > 1) {
-                doMd2Html(message);
-            }
+        if (toWordStat && messagesCounts > 1) {
+            doCount(message);
+        }
 
-            if (toMovies && messagesCounts > 1) {
-                doMovies(message);
-            }
+        if (toMd2Html && messagesCounts > 1) {
+            doMd2Html(message);
+        }
 
-            if (toWordStat || toMd2Html || toParse || toMovies) {
-                messagesCounts++;
-            }
+        if (toMovies && messagesCounts > 1) {
+            doMovies(message);
         }
     }
 
@@ -72,11 +78,10 @@ public class MedveBot extends TelegramLongPollingBot {
 
     @SneakyThrows
     private void doMovies(final Message message) {
-        ans = new Movies().suggestMovies(message.getText().
-                replace(" ", ""));
+        ans = new Movies().suggestMovies(message.getText());
 
         if (ans == null) {
-            printMessage(message, "Вы ввели неправильно, попробуйте еще раз.");
+            printMessage(message, "Вы ввели неправильно, попробуйте еще раз. \n\t Попробуйте: \n\t\t '-Ужасы' или 'Ужасы'");
             return;
         }
 
@@ -121,7 +126,7 @@ public class MedveBot extends TelegramLongPollingBot {
 
     @SneakyThrows
     private void doParse(final Message message) {
-        Parser parser = new Parser(message.getText() + " ");
+        final var parser = new Parser(message.getText() + " ");
 
         ans = parser.parse();
         finalFunc(message);
@@ -147,7 +152,8 @@ public class MedveBot extends TelegramLongPollingBot {
                     "\n -Комедии",
                     "\n -Детективы",
                     "\n -Боевики",
-                    "\n -Драмы")) {
+                    "\n -Драмы",
+                    "\n -Рандомный фильм")) {
                 c.append(s);
             }
 
@@ -225,18 +231,20 @@ public class MedveBot extends TelegramLongPollingBot {
                     "\n\t\t\t'~' - Корень" +
                     "\n\t\t\t'%' - Деление по модулю" +
                     "\n\t\t\t'-' - Вычитание" +
-                    "\n\n\t \uD835\uDC0D\uD835\uDC0E\uD835\uDC13\uD835\uDC04: \n\t\tБот умеет работать с очень большими числами…");
+                    "\n\n\t " +
+                    "\uD835\uDC0D\uD835\uDC0E\uD835\uDC13\uD835\uDC04: " +
+                    "\n\t\tБот умеет работать с очень большими числами…");
         }
     }
 
     @Override
     public String getBotUsername() {
-        return "";
+        return "@mdvzhnk_bot";
     }
 
     @Override
     public String getBotToken() {
-        return "";
+        return "5328607653:AAGuiGg0ivMrdzVrpk9AMM7LpTaHRxkX_70";
     }
 
     @SneakyThrows

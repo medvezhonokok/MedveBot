@@ -1,5 +1,6 @@
 package com.medvebot.features;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -10,11 +11,14 @@ import java.util.Map;
  * @created : 24.06.2022, пятница
  **/
 public class Movies {
+
     private static final Map<String, String> horrors = new HashMap<>();
     private static final Map<String, String> drams = new HashMap<>();
     private static final Map<String, String> detectives = new HashMap<>();
     private static final Map<String, String> comedies = new HashMap<>();
     private static final Map<String, String> actionMovies = new HashMap<>();
+
+    private static final ArrayList<Pair> allMovies = new ArrayList<>();
 
     public Movies() {
         detectives.put("\nОстров проклятых (2009): \n", "-http://mi.4-kfilm.cyou/1068-ostrov-prokljatyh-2009-smotret-onlajn-4k-u19.html");
@@ -46,12 +50,15 @@ public class Movies {
         actionMovies.put("\nСкорая (2022): \n", "-http://mi.4-kfilm.cyou/1518-skoraja-2022-smotret-onlajn-v-4k.html");
         actionMovies.put("\nРэмбо 3 (1988): \n", "-http://mi.4-kfilm.cyou/1053-rjembo-3-1988-smotret-onlajn-4k-u23.html");
         actionMovies.put("\nНе время умирать (2021): \n", "-http://mi.4-kfilm.cyou/1348-ne-vremja-umirat-2021-smotret-onlajn-4k-u23.html");
+
+        fill();
     }
 
     public static String suggestMovies(String string) {
         string = string.toLowerCase(Locale.ROOT);
         String ans = "";
 
+        string = string.contains("рандомный фильм") ? "рандомный фильм" : string;
         string = string.contains("ужасы") ? "ужасы" : string;
         string = string.contains("комедии") ? "комедии" : string;
         string = string.contains("драмы") ? "драмы" : string;
@@ -59,20 +66,23 @@ public class Movies {
         string = string.contains("боевики") ? "боевики" : string;
 
         switch (string) {
+            case "рандомный фильм":
+                ans = String.valueOf(allMovies.get((int) (Math.random() * 24)));
+                break;
             case "ужасы":
-                ans = FOR(ans, horrors);
+                ans = FOR(horrors);
                 break;
             case "комедии":
-                ans = FOR(ans, comedies);
+                ans = FOR(comedies);
                 break;
             case "драмы":
-                ans = FOR(ans, drams);
+                ans = FOR(drams);
                 break;
             case "детективы":
-                ans = FOR(ans, detectives);
+                ans = FOR(detectives);
                 break;
             case "боевики":
-                ans = FOR(ans, actionMovies);
+                ans = FOR(actionMovies);
                 break;
             default:
                 ans = null;
@@ -82,8 +92,39 @@ public class Movies {
         return ans;
     }
 
-    private static String FOR(final String ans, final Map<String, String> typeOfMovie) {
-        StringBuilder ansBuilder = new StringBuilder(ans);
+    private static void fill() {
+        fillList(horrors);
+        fillList(drams);
+        fillList(detectives);
+        fillList(comedies);
+        fillList(actionMovies);
+    }
+
+    private static void fillList(Map<String, String> map) {
+        Pair<String, String> p;
+        for (Map.Entry<String, String> entry : map.entrySet()) {
+            p = new Pair<>(entry.getKey(), entry.getValue());
+            allMovies.add(p);
+        }
+    }
+
+    private static class Pair<K, V> {
+        K name;
+        V url;
+
+        public Pair(K name, V url) {
+            this.name = name;
+            this.url = url;
+        }
+
+        @Override
+        public String toString() {
+            return name + " " + url;
+        }
+    }
+
+    private static String FOR(final Map<String, String> typeOfMovie) {
+        StringBuilder ansBuilder = new StringBuilder();
 
         for (Map.Entry<String, String> nameAndURL : typeOfMovie.entrySet()) {
             ansBuilder.append(nameAndURL.getKey()).append(nameAndURL.getValue());
